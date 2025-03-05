@@ -57,7 +57,7 @@ def run_optimizer(ode, IG, BoundaryFirst, BoundaryLast, optType, E_or_T, Umax, U
     phase.optimizer.set_EContol(EControl)
     ## Set Max number of mesh iterations:
     #phase.setMaxMeshIters(10)  #default = 10
-    
+     
     phase.setThreads(numThreads,numThreads) #Q: what does this do? A:Parallelization
     phase.optimizer.set_PrintLevel(1)
     phase.optimize()
@@ -65,15 +65,50 @@ def run_optimizer(ode, IG, BoundaryFirst, BoundaryLast, optType, E_or_T, Umax, U
     return phase
 
 if __name__ == "__main__":
-
     mu_star =  0.01215059   # Constant for CR3BP
     Umax = 0.0184*100           # DU/TU^2
-
-
+    
     # REFERENCE TRAJECTORY STATE AND PERIOD
     tf  = 2.085034838884136 # TU
     # Load in the reference state data
-    FileName_ref = "C:/Users/ccm41/Downloads/Research/Starlift/STM_Stuff/STMPrecompute-main/STMPrecompute-main/EnergyOptimal_state_EarthMoon_L2nrho.mat"
+    FileName_ref = "EnergyOptimal_state_EarthMoon_L2nrho.mat"
     ref_state = list(scipy.io.loadmat(FileName_ref).values())[-1]
+    print(ref_state[0])
 
+    IG = [[ref_state[i,0], ref_state[i,1], ref_state[i,2], ref_state[i,3], ref_state[i,4], ref_state[i,5], tf*i/(max(np.shape(ref_state))), 1e-6, 1e-6, 1e-6] for i in range(max(np.shape(ref_state)))]
+    ode = CR3BP_Thrust_Dynamics(mu_star)
+        
+
+    optType = "LGL3"
+    E_or_T = 0
+    numKnots = 64
+    numThreads = 8
+    Umin = 1.0e-8
+    MeshTol = 1.0e-8
+    EControl = 1.0e-10
+    BoundaryFirst = list(IG_state[:6,0]*10) + [0]
+    BoundaryLast = list(IG_state[:6,0]*10) + [tf]
+
+    phase = run_optimizer(ode, IG, BoundaryFirst, BoundaryLast, optType, E_or_T, Umax, Umin, numKnots, numThreads, MeshTol, EControl)
+
+
+    Traj = phase.returnTraj()
+
+    IG = Traj
+
+    ####################################################################
+    ####################################################################
+    ####################################################################
+
+    optType = "LGL7"
+    E_or_T = 1
+    numKnots = 200
+    numThreads = 8
+    MeshTol = 1.0e-10
+    EControl = 1.0e-12
+    BoundaryFirst = list(IG_state[:6,0]) + [0]
+    BoundaryLast = list(IG_state[:6,0]) + [tf]
+
+    phase2 = run_optimizer(ode, IG, BoundaryFirst, BoundaryLast, optType, E_or_T, Umax, Umin, numKnots, numThreads, MeshTol, EControl)
+    Traj = phase2.returnTraj()
     
