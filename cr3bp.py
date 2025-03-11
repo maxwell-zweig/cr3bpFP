@@ -33,12 +33,31 @@ class CR3BP_Thrust_Dynamics(oc.ODEBase):
         super().__init__(ode,Xvars,Uvars)
 
 
+
+
+def FrontBackEqCon():
+    X_0, t_0, X_f, t_f = Args(14).tolist([(0,6), (6,1), (7,6), (13,1)])
+    eq1 = X_0[3:] - X_f[3:]
+    return eq1
+
+
+
 def run_optimizer(ode, IG, BoundaryFirst, BoundaryLast, optType, E_or_T, Umax, Umin, numKnots, numThreads, MeshTol, EControl):
     phase = ode.phase(optType, IG, numKnots)
     #Fix first state and time
-    phase.addBoundaryValue("First", range(0,7), BoundaryFirst) #Q: Does this have constraints on the dimensionality? A: 1d array if this doesnt work
+    phase.addBoundaryValue("First", range(0,3), BoundaryFirst[0:3]) #Q: Does this have constraints on the dimensionality? A: 1d array if this doesnt work
     #Fix last state and time
-    phase.addBoundaryValue("Last", range(0,7), BoundaryLast)
+    phase.addBoundaryValue("Last", range(0,3), BoundaryLast[0:3])
+
+
+    phase.addBoundaryValue("First", [6], BoundaryFirst[3])
+    phase.addBoundaryValue("Last", [6], BoundaryLast[3])
+
+
+    # enforce perioodicity
+    phase.addEqualCon("FirstandLast", FrontBackEqCon(), range(0,7), [], [])
+
+
     # Bound control forces
     phase.addLUNormBound("Path",[7,8,9],Umin,Umax) #Q: how to write this line? A: LUNorm - don't let it go to 0
     #Produce a mass-optimal result by integrating over a norm() applied to the thrust vector
@@ -73,32 +92,17 @@ if __name__ == "__main__":
     # Load in the reference state data
     FileName_ref = "EnergyOptimal_state_EarthMoon_L2nrho.mat"
     ref_state = list(scipy.io.loadmat(FileName_ref).values())[-1]
-    print(ref_state[0])
 
     IG = [[ref_state[i,0], ref_state[i,1], ref_state[i,2], ref_state[i,3], ref_state[i,4], ref_state[i,5], tf*i/(max(np.shape(ref_state))), 1e-6, 1e-6, 1e-6] for i in range(max(np.shape(ref_state)))]
     ode = CR3BP_Thrust_Dynamics(mu_star)
         
 
-    optType = "LGL3"
-    E_or_T = 0
-    numKnots = 64
-    numThreads = 8
     Umin = 1.0e-8
-    MeshTol = 1.0e-8
-    EControl = 1.0e-10
-    BoundaryFirst = list(IG_state[:6,0]*10) + [0]
-    BoundaryLast = list(IG_state[:6,0]*10) + [tf]
 
-    phase = run_optimizer(ode, IG, BoundaryFirst, BoundaryLast, optType, E_or_T, Umax, Umin, numKnots, numThreads, MeshTol, EControl)
-
-
-    Traj = phase.returnTraj()
-
-    IG = Traj
 
     ####################################################################
     ####################################################################
-    ####################################################################
+    ##############################e######################################
 
     optType = "LGL7"
     E_or_T = 1
@@ -106,9 +110,23 @@ if __name__ == "__main__":
     numThreads = 8
     MeshTol = 1.0e-10
     EControl = 1.0e-12
-    BoundaryFirst = list(IG_state[:6,0]) + [0]
-    BoundaryLast = list(IG_state[:6,0]) + [tf]
+
+    BoundaryFirst = list(ref_state[0, 0 : 3] * 1.01) + [0]
+    BoundaryLast =  list(ref_state[0, 0 : 3] * 1.01) + [tf]
 
     phase2 = run_optimizer(ode, IG, BoundaryFirst, BoundaryLast, optType, E_or_T, Umax, Umin, numKnots, numThreads, MeshTol, EControl)
     Traj = phase2.returnTraj()
+
+    traj = np.array(Traj)
+    dts = (traj[1:] - traj[:traj.shape[0] - 1])[:, 6]
+    controls = traj[: traj.shape[0] -1][:, 7 : 10]
+    control_mags = np.linalg.norm(controls, axis=1)
+    print(np.dot(control_mags, dts))
+
+
+
+    print(BoundaryFirst)
+    print(Traj[0])
+    print(Traj[-1])
+    print(BoundaryLast)
     
