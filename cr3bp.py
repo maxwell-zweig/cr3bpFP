@@ -49,7 +49,7 @@ def run_optimizer(ode, IG, BoundaryFirst, BoundaryLast, optType, E_or_T, Umax, U
     #Fix last state and time
     phase.addBoundaryValue("Last", range(0,3), BoundaryLast[0:3])
 
-
+    # adding the time boundary conditions
     phase.addBoundaryValue("First", [6], BoundaryFirst[3])
     phase.addBoundaryValue("Last", [6], BoundaryLast[3])
 
@@ -59,6 +59,8 @@ def run_optimizer(ode, IG, BoundaryFirst, BoundaryLast, optType, E_or_T, Umax, U
 
 
     # Bound control forces
+    print(Umin, Umax)
+
     phase.addLUNormBound("Path",[7,8,9],Umin,Umax) #Q: how to write this line? A: LUNorm - don't let it go to 0
     #Produce a mass-optimal result by integrating over a norm() applied to the thrust vector
     if E_or_T == 0:
@@ -84,6 +86,10 @@ def run_optimizer(ode, IG, BoundaryFirst, BoundaryLast, optType, E_or_T, Umax, U
     return phase
 
 if __name__ == "__main__":
+    
+    DU = 384400000.0000000
+    TU = 2.360584684800000E+06/(2*np.pi)
+    
     mu_star =  0.01215059   # Constant for CR3BP
     Umax = 0.0184*100           # DU/TU^2
     
@@ -111,8 +117,8 @@ if __name__ == "__main__":
     MeshTol = 1.0e-10
     EControl = 1.0e-12
 
-    BoundaryFirst = list(ref_state[0, 0 : 3] * 1.01) + [0]
-    BoundaryLast =  list(ref_state[0, 0 : 3] * 1.01) + [tf]
+    BoundaryFirst = list(ref_state[0, 0 : 3] * 1.5925) + [0]
+    BoundaryLast =  list(ref_state[0, 0 : 3] * 1.5925) + [tf]
 
     phase2 = run_optimizer(ode, IG, BoundaryFirst, BoundaryLast, optType, E_or_T, Umax, Umin, numKnots, numThreads, MeshTol, EControl)
     Traj = phase2.returnTraj()
@@ -121,7 +127,12 @@ if __name__ == "__main__":
     dts = (traj[1:] - traj[:traj.shape[0] - 1])[:, 6]
     controls = traj[: traj.shape[0] -1][:, 7 : 10]
     control_mags = np.linalg.norm(controls, axis=1)
+    
     print(np.dot(control_mags, dts))
+    print(tf * Umax)
+
+
+    print(f'Percentage of fuel used: {100 * np.dot(control_mags, dts) / (tf * Umax)}' )
 
 
 
@@ -129,4 +140,38 @@ if __name__ == "__main__":
     print(Traj[0])
     print(Traj[-1])
     print(BoundaryLast)
-    
+
+    Traj_array = np.array(Traj).T
+
+    fig = plt.figure()
+    ax0 = plt.subplot(421)
+    ax1 = plt.subplot(423)
+    ax2 = plt.subplot(425)
+    ax3 = plt.subplot(426)
+
+    ax0.plot(TU/86400 * Traj_array[6], DU/TU**2 * Traj_array[7])  # plots u_x vs time
+
+    ax1.plot(TU/86400 * Traj_array[6], DU/TU**2 * Traj_array[8])  # plots u_y vs time
+
+    ax2.plot(TU/86400 * Traj_array[6], DU/TU**2 * Traj_array[9])  # plots u_z vs time
+
+    ax3.plot(TU / 86400 * Traj_array[6], DU / TU ** 2 * np.linalg.norm(Traj_array[7:10], axis=0))
+
+
+    ax0.grid(True)
+    ax1.grid(True)
+    ax2.grid(True)  
+
+
+    ax0.set_ylabel(r'$U_x$')
+    ax1.set_ylabel(r'$U_y$')
+    ax2.set_ylabel(r'$U_z$')
+    ax3.set_ylabel(r'$Control Magnitude$')
+
+    fig.set_size_inches(10.5, 5.5, forward=True)
+
+
+    fig.set_tight_layout(True)
+    #plt.savefig('MassOptimal_Example2.png', dpi=500)
+    #plt.savefig('MassOptimal_Example2.pdf')
+    plt.show()
