@@ -156,6 +156,11 @@ STT_full = list(scipy.io.loadmat(FileName_STT).values())[-1]
 
 state = state_full[-1,:]
 STM = STM_full[-1,:,:]
+
+saveSTMName = "./fullPeriodSTM.mat"
+scipy.io.savemat(saveSTMName, {"STM" : STM})
+
+
 STT = STT_full[-1,:,:,:]
 time = []
 for i in range(len(state_full)):
@@ -459,6 +464,10 @@ plt.show()
 ########################
 # Improvement: Just clean up a bit
 
+'''
+
+
+
 TU = 2.360584684800000E+06/(2*np.pi) #seconds
 DU = 384400000.0000000 #meters
 
@@ -539,7 +548,7 @@ plt.show()
 
 
 
-
+'''
 
 
 

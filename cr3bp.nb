@@ -1,0 +1,280 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Wolfram 14.2' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       154,          7]
+NotebookDataLength[      9956,        272]
+NotebookOptionsPosition[      9474,        255]
+NotebookOutlinePosition[      9870,        271]
+CellTagsIndexPosition[      9827,        268]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+  "SetDirectory", "[", "\"\</Users/maxzweig/research/cr3bp\>\"", "]"}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"fullPeriodStm", " ", "=", " ", 
+   RowBox[{
+    RowBox[{"Import", "[", "\"\<fullPeriodSTM.mat\>\"", "]"}], "[", 
+    RowBox[{"[", "1", "]"}], "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"initialLinearEnergyCostates", "[", 
+    RowBox[{"x0_", ",", " ", "xf_"}], "]"}], " ", ":=", " ", 
+   RowBox[{
+    RowBox[{"-", 
+     RowBox[{
+      RowBox[{"(", 
+       RowBox[{
+        RowBox[{"fullPeriodStm", "[", 
+         RowBox[{"[", 
+          RowBox[{
+           RowBox[{"1", ";;", "6"}], ",", " ", 
+           RowBox[{"7", " ", ";;", " ", "12"}]}], "]"}], "]"}], " ", "//", 
+        "  ", "Inverse"}], ")"}], ".", 
+      RowBox[{"fullPeriodStm", "[", 
+       RowBox[{"[", 
+        RowBox[{
+         RowBox[{"1", ";;", "6"}], ",", " ", 
+         RowBox[{"1", ";;", "6"}]}], "]"}], "]"}], ".", "x0"}]}], " ", "+", 
+    " ", 
+    RowBox[{
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{"fullPeriodStm", "[", 
+        RowBox[{"[", 
+         RowBox[{
+          RowBox[{"1", ";;", "6"}], ",", " ", 
+          RowBox[{"7", " ", ";;", " ", "12"}]}], "]"}], "]"}], " ", "//", 
+       "  ", "Inverse"}], ")"}], ".", "xf"}]}]}], "\[IndentingNewLine]"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"optControlDynamics", "[", 
+    RowBox[{
+    "ics_", ",", " ", "isp_", ",", " ", "tf_", ",", " ", "tmax_", ",", " ", 
+     "A_"}], "]"}], " ", ":=", " ", 
+   RowBox[{"Module", "[", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"vars", ",", " ", "dyn"}], "}"}], ",", "\[IndentingNewLine]", 
+     RowBox[{
+      RowBox[{
+       RowBox[{"mag", "[", 
+        RowBox[{"lxv_", ",", " ", "lyv_", ",", " ", "lzv_"}], "]"}], " ", ":=", 
+       RowBox[{
+        RowBox[{"(", 
+         RowBox[{
+          RowBox[{"lxv", " ", "^", " ", "2"}], "+", " ", 
+          RowBox[{"lyv", " ", "^", "2"}], " ", "+", " ", 
+          RowBox[{"lzv", " ", "^", "2"}]}], ")"}], " ", "//", " ", "Sqrt"}]}],
+       ";", "\[IndentingNewLine]", 
+      RowBox[{
+       RowBox[{"switchingfunc", " ", "[", 
+        RowBox[{
+        "lxv_", ",", " ", "lyv_", ",", " ", "lzv_", ",", " ", "lmag_", ",", 
+         " ", "mas_", ",", " ", "c_"}], "]"}], " ", ":=", " ", 
+       RowBox[{
+        RowBox[{"mag", "[", 
+         RowBox[{"lxv", ",", " ", "lyv", ",", " ", "lzv"}], "]"}], " ", "-", 
+        " ", 
+        RowBox[{"lmag", " ", 
+         RowBox[{"mas", " ", "/", "c"}]}]}]}], ";", " ", 
+      "\[IndentingNewLine]", 
+      RowBox[{"vars", "=", 
+       RowBox[{"{", 
+        RowBox[{
+        "x", ",", "y", ",", "z", ",", "vx", ",", "vy", ",", "vz", ",", "m", ",",
+          "lxr", ",", "lyr", ",", "lzr", ",", "lxv", ",", "lyv", ",", "lzv", ",",
+          "lm"}], "}"}]}], ";", "\[IndentingNewLine]", 
+      RowBox[{"eqnsOpt", " ", "=", " ", 
+       RowBox[{"Join", "[", 
+        RowBox[{
+         RowBox[{
+          RowBox[{"(", 
+           RowBox[{
+            RowBox[{"-", " ", "A"}], " ", "//", " ", "Transpose"}], ")"}], ".", 
+          RowBox[{"{", 
+           RowBox[{
+           "lxr", ",", " ", "lyr", ",", " ", "lzr", ",", " ", "lxv", ",", " ",
+             "lyv", ",", " ", "lzv"}], "}"}]}], ",", " ", 
+         RowBox[{"{", 
+          RowBox[{"(*", "-", "*)"}], 
+          RowBox[{
+           RowBox[{"(", " ", 
+            RowBox[{
+             RowBox[{"1", "/", "2"}], " ", "+", 
+             RowBox[{
+              RowBox[{"Sign", "[", 
+               RowBox[{"switchingfunc", "[", 
+                RowBox[{
+                "lxv", ",", " ", "lyv", ",", " ", "lzv", ",", " ", "lm", ",", 
+                 " ", "m", ",", " ", "isp"}], "]"}], "]"}], " ", "/", " ", 
+              "2"}]}], ")"}], "tmax", " ", 
+           RowBox[{
+            RowBox[{"mag", "[", 
+             RowBox[{"lxv", ",", " ", "lyv", ",", " ", "lzv"}], "]"}], "  ", "/",
+             " ", 
+            RowBox[{"(", 
+             RowBox[{"m", " ", "^", "2"}], ")"}]}]}], "}"}]}], "]"}]}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"eqnsStateOpt", "=", 
+       RowBox[{
+        RowBox[{"{", "  ", 
+         RowBox[{
+          RowBox[{
+           RowBox[{"2", " ", "vy", " ", "n"}], " ", "+", " ", 
+           RowBox[{"3", 
+            RowBox[{"n", "^", "2"}], " ", "x"}]}], ",", "    ", 
+          RowBox[{
+           RowBox[{"-", "2"}], " ", "n", " ", "vx"}], ",", " ", 
+          RowBox[{
+           RowBox[{"-", " ", 
+            RowBox[{"n", "^", "2"}]}], " ", "z"}]}], "  ", "}"}], " ", "+", 
+        " ", 
+        RowBox[{
+         RowBox[{"(", 
+          RowBox[{"1", "/", "m"}], ")"}], 
+         RowBox[{"(", " ", 
+          RowBox[{
+           RowBox[{"1", "/", "2"}], " ", "+", 
+           RowBox[{
+            RowBox[{"Sign", "[", 
+             RowBox[{"switchingfunc", "[", 
+              RowBox[{
+              "lxv", ",", " ", "lyv", ",", " ", "lzv", ",", " ", "lm", ",", 
+               " ", "m", ",", " ", "isp"}], "]"}], "]"}], " ", "/", " ", 
+            "2"}]}], ")"}], " ", "tmax", " ", 
+         RowBox[{"(*", 
+          RowBox[{"(", "-", ")"}], "*)"}], 
+         RowBox[{
+          RowBox[{"{", 
+           RowBox[{"lxv", ",", " ", "lyv", ",", " ", "lzv"}], "}"}], " ", "/",
+           " ", 
+          RowBox[{"mag", "[", 
+           RowBox[{"lxv", ",", " ", "lyv", ",", " ", "lzv"}], "]"}]}]}]}]}], ";",
+       "\[IndentingNewLine]", 
+      RowBox[{"dyn", "=", 
+       RowBox[{"Join", "[", 
+        RowBox[{
+         RowBox[{"Join", "[", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"vx", ",", "vy", ",", "vz"}], "}"}], ",", 
+           RowBox[{"Join", "[", 
+            RowBox[{"eqnsStateOpt", ",", " ", 
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"-", " ", 
+                RowBox[{"(", " ", 
+                 RowBox[{
+                  RowBox[{"1", "/", "2"}], " ", "+", 
+                  RowBox[{
+                   RowBox[{"Sign", "[", 
+                    RowBox[{"switchingfunc", "[", 
+                    RowBox[{
+                    "lxv", ",", " ", "lyv", ",", " ", "lzv", " ", ",", " ", 
+                    "lm", ",", " ", "m", ",", " ", "isp"}], "]"}], "]"}], " ",
+                    "/", " ", "2"}]}], ")"}]}], 
+               RowBox[{"tmax", "/", "isp"}]}], "}"}]}], "]"}]}], "]"}], ",", 
+         "eqnsOpt"}], "]"}]}], ";", "\[IndentingNewLine]", 
+      RowBox[{"soln", " ", "=", "  ", 
+       RowBox[{"NDSolveValue", "[", "\[IndentingNewLine]", 
+        RowBox[{
+         RowBox[{"Join", "[", 
+          RowBox[{
+           RowBox[{"Thread", "[", 
+            RowBox[{
+             RowBox[{"(", 
+              RowBox[{
+               RowBox[{
+                RowBox[{
+                 RowBox[{"#", "'"}], "[", "t", "]"}], "&"}], "/@", 
+               RowBox[{"vars", "[", 
+                RowBox[{"[", 
+                 RowBox[{"1", ";;", "14"}], "]"}], "]"}]}], ")"}], "==", 
+             RowBox[{"(", 
+              RowBox[{"dyn", "/.", 
+               RowBox[{"Thread", "[", 
+                RowBox[{"vars", "->", 
+                 RowBox[{"(", 
+                  RowBox[{
+                   RowBox[{
+                    RowBox[{"#", "[", "t", "]"}], "&"}], "/@", "vars"}], 
+                  ")"}]}], "]"}]}], ")"}]}], "]"}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{"Thread", "[", 
+            RowBox[{
+             RowBox[{"(", 
+              RowBox[{
+               RowBox[{
+                RowBox[{"#", "[", "0", "]"}], "&"}], "/@", "vars"}], ")"}], "\[Equal]",
+              "ics"}], "]"}]}], "]"}], ",", "\[IndentingNewLine]", "vars", ",",
+          "  ", 
+         RowBox[{"{", 
+          RowBox[{"t", ",", " ", "tf", ",", " ", "tf"}], "}"}], ",", " ", 
+         RowBox[{"Method", " ", "->", " ", "\"\<BDF\>\""}]}], 
+        "\[IndentingNewLine]", "]"}]}], ";", "\[IndentingNewLine]", 
+      RowBox[{
+       RowBox[{
+        RowBox[{"#", "[", "tf", "]"}], "&"}], "/@", "soln"}]}]}], 
+    "\[IndentingNewLine]", "]"}]}], "\[IndentingNewLine]", 
+  "\[IndentingNewLine]", 
+  "\[IndentingNewLine]"}], "\[IndentingNewLine]"}], "Input",
+ CellChangeTimes->{{3.9507147171404963`*^9, 3.950714745591308*^9}, {
+  3.950714778524384*^9, 3.950714856184265*^9}, {3.950715014694818*^9, 
+  3.950715024418619*^9}, {3.950715547760125*^9, 3.950715773392976*^9}, {
+  3.950715812812428*^9, 
+  3.95071581800101*^9}},ExpressionUUID->"0900489f-ed61-4bc2-8025-\
+27dad22f9a21"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"7.837105551611501`", ",", 
+   RowBox[{"-", "24.565345658118275`"}], ",", 
+   RowBox[{"-", "8.176489382834`"}], ",", 
+   RowBox[{"-", "8.15391104040706`"}], ",", 
+   RowBox[{"-", "1.4171892484336865`"}], ",", 
+   RowBox[{"-", "58.792027929952326`"}]}], "}"}]], "Output",
+ CellChangeTimes->{{3.950715725737542*^9, 3.950715763809766*^9}},
+ CellLabel->
+  "Out[198]=",ExpressionUUID->"945c00a7-48c7-43ae-8ff7-852dd72a6864"]
+}, Open  ]]
+},
+WindowSize->{808, 816},
+WindowMargins->{{2, Automatic}, {Automatic, 42}},
+FrontEndVersion->"14.2 for Mac OS X ARM (64-bit) (December 26, 2024)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"54bb719d-520e-424f-b199-c1c7249c6c37"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[576, 22, 8421, 218, 682, "Input",ExpressionUUID->"0900489f-ed61-4bc2-8025-27dad22f9a21"],
+Cell[9000, 242, 458, 10, 33, "Output",ExpressionUUID->"945c00a7-48c7-43ae-8ff7-852dd72a6864"]
+}, Open  ]]
+}
+]
+*)
+

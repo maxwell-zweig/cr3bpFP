@@ -9,6 +9,19 @@ vf = ast.VectorFunctions
 oc = ast.OptimalControl
 Args = vf.Arguments
 
+DU = 384400000.0000000
+TU = 2.360584684800000E+06/(2*np.pi)
+    
+MU_STAR =  0.01215059   # Constant for CR3BP
+UMAX = 0.0184*100           # DU/TU^2
+    
+   
+TF  = 2.085034838884136 # TU
+    
+    
+FILENAME_REF = "EnergyOptimal_state_EarthMoon_L2nrho.mat"
+REF_STATE = list(scipy.io.loadmat(FILENAME_REF).values())[-1]
+
 
 class CR3BP_Thrust_Dynamics(oc.ODEBase):
 
@@ -32,15 +45,10 @@ class CR3BP_Thrust_Dynamics(oc.ODEBase):
         ####################################################
         super().__init__(ode,Xvars,Uvars)
 
-
-
-
 def FrontBackEqCon():
     X_0, t_0, X_f, t_f = Args(14).tolist([(0,6), (6,1), (7,6), (13,1)])
     eq1 = X_0[3:] - X_f[3:]
     return eq1
-
-
 
 def run_optimizer(ode, IG, BoundaryFirst, BoundaryLast, optType, E_or_T, Umax, Umin, numKnots, numThreads, MeshTol, EControl):
     phase = ode.phase(optType, IG, numKnots)
@@ -85,22 +93,61 @@ def run_optimizer(ode, IG, BoundaryFirst, BoundaryLast, optType, E_or_T, Umax, U
 
     return phase
 
+def reachable_val(direction, initialMag):
+
+
+    IG = [[REF_STATE[i,0], REF_STATE[i,1], REF_STATE[i,2], REF_STATE[i,3], REF_STATE[i,4], REF_STATE[i,5], TF*i/(max(np.shape(REF_STATE))), 1e-6, 1e-6, 1e-6] for i in range(max(np.shape(REF_STATE)))]
+    ode = CR3BP_Thrust_Dynamics(MU_STAR)
+
+    Umin = 1.0e-8
+
+
+    optType = "LGL7"
+    E_or_T = 1
+    numKnots = 200
+    numThreads = 8
+    MeshTol = 1.0e-10
+    EControl = 1.0e-12
+
+    fractionTimeThrusting = 0 
+    curMag = initialMag
+    lowerBound = initialMag
+    upperBound = 10
+    curMag = (lowerBound + upperBound) / 2
+    
+    while fractionTimeThrusting < 0.99:
+        BoundaryFirst = list(REF_STATE[0, 0 : 3] + direction * curMag) + [0]
+        BoundaryLast =  list(REF_STATE[0, 0 : 3] * direction * curMag) + [TF]
+
+        phase2 = run_optimizer(ode, IG, BoundaryFirst, BoundaryLast, optType, E_or_T, UMAX, Umin, numKnots, numThreads, MeshTol, EControl)
+        Traj = phase2.returnTraj()
+
+        # converged = function(Traj, phase2)
+        # if converged: 
+        #    lowerBound = curMag
+        # if not converged:
+        #    upperBound = curMag
+
+        traj = np.array(Traj)
+        dts = (traj[1:] - traj[:traj.shape[0] - 1])[:, 6]
+        controls = traj[: traj.shape[0] -1][:, 7 : 10]
+        control_mags = np.linalg.norm(controls, axis=1)
+
+        fractionTimeThrusting = np.dot(control_mags, dts) / (TF * UMAX)
+
+        print(f'Percentage of fuel used: {100 * np.dot(control_mags, dts) / (TF * UMAX)}' )
+
+
+    pass
+
+
+
 if __name__ == "__main__":
     
-    DU = 384400000.0000000
-    TU = 2.360584684800000E+06/(2*np.pi)
     
-    mu_star =  0.01215059   # Constant for CR3BP
-    Umax = 0.0184*100           # DU/TU^2
-    
-    # REFERENCE TRAJECTORY STATE AND PERIOD
-    tf  = 2.085034838884136 # TU
-    # Load in the reference state data
-    FileName_ref = "EnergyOptimal_state_EarthMoon_L2nrho.mat"
-    ref_state = list(scipy.io.loadmat(FileName_ref).values())[-1]
 
-    IG = [[ref_state[i,0], ref_state[i,1], ref_state[i,2], ref_state[i,3], ref_state[i,4], ref_state[i,5], tf*i/(max(np.shape(ref_state))), 1e-6, 1e-6, 1e-6] for i in range(max(np.shape(ref_state)))]
-    ode = CR3BP_Thrust_Dynamics(mu_star)
+    IG = [[REF_STATE[i,0], REF_STATE[i,1], REF_STATE[i,2], REF_STATE[i,3], REF_STATE[i,4], REF_STATE[i,5], TF*i/(max(np.shape(REF_STATE))), 1e-6, 1e-6, 1e-6] for i in range(max(np.shape(REF_STATE)))]
+    ode = CR3BP_Thrust_Dynamics(MU_STAR)
         
 
     Umin = 1.0e-8
@@ -117,10 +164,10 @@ if __name__ == "__main__":
     MeshTol = 1.0e-10
     EControl = 1.0e-12
 
-    BoundaryFirst = list(ref_state[0, 0 : 3] * 1.5925) + [0]
-    BoundaryLast =  list(ref_state[0, 0 : 3] * 1.5925) + [tf]
+    BoundaryFirst = list(REF_STATE[0, 0 : 3] * 1.5925) + [0]
+    BoundaryLast =  list(REF_STATE[0, 0 : 3] * 1.5925) + [TF]
 
-    phase2 = run_optimizer(ode, IG, BoundaryFirst, BoundaryLast, optType, E_or_T, Umax, Umin, numKnots, numThreads, MeshTol, EControl)
+    phase2 = run_optimizer(ode, IG, BoundaryFirst, BoundaryLast, optType, E_or_T, UMAX, Umin, numKnots, numThreads, MeshTol, EControl)
     Traj = phase2.returnTraj()
 
     traj = np.array(Traj)
@@ -129,10 +176,10 @@ if __name__ == "__main__":
     control_mags = np.linalg.norm(controls, axis=1)
     
     print(np.dot(control_mags, dts))
-    print(tf * Umax)
+    print(TF * UMAX)
 
 
-    print(f'Percentage of fuel used: {100 * np.dot(control_mags, dts) / (tf * Umax)}' )
+    print(f'Percentage of fuel used: {100 * np.dot(control_mags, dts) / (TF * UMAX)}' )
 
 
 
