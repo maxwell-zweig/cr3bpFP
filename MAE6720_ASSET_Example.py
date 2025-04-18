@@ -167,7 +167,7 @@ if __name__ == "__main__":
     # REFERENCE TRAJECTORY STATE AND PERIOD
     tf  = 2.085034838884136 # TU
     # Load in the reference state data
-    FileName_ref = "C:/Users/ccm41/Downloads/Research/Starlift/STM_Stuff/STMPrecompute-main/STMPrecompute-main/EnergyOptimal_state_EarthMoon_L2nrho.mat"
+    FileName_ref = "EnergyOptimal_state_EarthMoon_L2nrho.mat"
     ref_state = list(scipy.io.loadmat(FileName_ref).values())[-1]
 
     # Load in the energy-optimal state data for all runs (1000 orbits)
@@ -210,7 +210,6 @@ if __name__ == "__main__":
     ####################################################################
     ####################################################################
     ####################################################################
-
 
     BoundaryFirst = list(IG_state[:6,0]) + [0]
     BoundaryLast = list(IG_state[:6,0]) + [tf]
